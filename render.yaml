@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: linkguard-ai-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_TIMEZONE
+        value: Asia/Riyadh
+      - key: DB_DATABASE
+        value: /tmp/linkguard.sqlite
+      - key: REPUTATION_MODE
+        value: mock
+      - key: CONTENT_SANDBOX_MODE
+        value: disabled
+      - key: RATE_LIMIT_MAX
+        value: "12"
+      - key: RATE_LIMIT_WINDOW
+        value: "60"

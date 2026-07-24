@@ -1,0 +1,13 @@
+{
+  "name": "linkguard-content-sandbox",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Isolated, non-JavaScript metadata inspector for LinkGuard AI.",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

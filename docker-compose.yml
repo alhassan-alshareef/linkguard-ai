@@ -1,0 +1,23 @@
+services:
+  content-sandbox:
+    build:
+      context: ./sandbox
+    environment:
+      NODE_ENV: production
+      PORT: "8787"
+      SANDBOX_SHARED_TOKEN: "${CONTENT_SANDBOX_TOKEN:?Set CONTENT_SANDBOX_TOKEN in .env}"
+      SANDBOX_TIMEOUT_MS: "${CONTENT_SANDBOX_TIMEOUT_MS:-6000}"
+      SANDBOX_MAX_BYTES: "${CONTENT_SANDBOX_MAX_BYTES:-131072}"
+    ports:
+      - "127.0.0.1:8787:8787"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.50
+    restart: unless-stopped
