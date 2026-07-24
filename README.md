@@ -1,152 +1,65 @@
-# LinkGuard AI | فاحص الروابط المشبوهة
+# LinkGuard AI
 
 [![Tests](https://github.com/alhassan-alshareef/linkguard-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/alhassan-alshareef/linkguard-ai/actions/workflows/tests.yml)
 
-تطبيق ويب ثنائي اللغة يساعد المستخدم على **فحص مؤشرات الخطر الظاهرة في الروابط قبل فتحها**. يحلل الرابط بقواعد واضحة، يفحص سمعته عند تفعيل مزود خارجي، ويمكنه قراءة بيانات محدودة من الصفحة داخل حاوية معزولة، ثم ينشئ نتيجة قابلة للتفسير وتقرير PDF بالعربية أو الإنجليزية.
+LinkGuard AI is a bilingual web application that helps people take a closer look at suspicious links before opening them.
 
-> النتيجة هي درجة **مؤشرات خطر مرصودة** وليست ضماناً بأن الموقع آمن أو خبيث. ظهور 0% يعني أن الفحوص المتاحة لم تجد مؤشرات، وليس أن الرابط آمن 100%.
+Instead of returning a mysterious percentage, it shows the warning signs it found, explains how they affected the score, and tells the user which checks were actually available. The goal is not to declare a link “safe.” It is to make the available evidence easier to understand.
 
-## الديمو
+**Live demo:** [linkguard-ai-demo.onrender.com](https://linkguard-ai-demo.onrender.com)
 
-- رابط الديمو: **[https://linkguard-ai-demo.onrender.com](https://linkguard-ai-demo.onrender.com)**
-- يعمل الديمو العام افتراضياً في وضع `mock` الآمن؛ نتائج السمعة فيه تجريبية ومعلّمة بوضوح.
-- للحصول على سمعة حية يجب ضبط `REPUTATION_MODE=virustotal` وإضافة مفتاح VirusTotal في متغيرات البيئة، بدون وضعه داخل الكود.
+> A score of 0 does not guarantee that a link is safe. It only means that the checks available at that moment did not find a weighted risk indicator.
 
-## ماذا يفعل المشروع؟
+## Why I built it
 
-1. يتحقق من صيغة الرابط ويرفض البروتوكولات غير المسموحة والعناوين الداخلية.
-2. يفحص شكل الرابط: Punycode، عنوان IP مباشر، كثرة النطاقات الفرعية، الروابط المختصرة، HTTP، المنافذ غير المعتادة، والطول الزائد.
-3. يبحث عن كلمات التصيد ومحاولات تقليد أسماء العلامات.
-4. يقرأ سمعة الرابط من مزود قابل للتبديل: بيانات تجريبية محلية أو VirusTotal.
-5. اختيارياً، يقرأ عنوان الصفحة والنماذج وبعض البيانات الوصفية داخل حاوية Node.js معزولة، بدون تشغيل JavaScript أو تنزيل ملفات.
-6. يحسب درجة حتمية من 0 إلى 100 ويعرض الأدلة وحدود الفحص.
-7. يحفظ سجل الحالة في SQLite ويصدر تقرير PDF باللغة المختارة.
+Suspicious links often look convincing at first glance. A changed letter, a misleading subdomain, or an urgent word such as “verify” can be easy to miss.
 
-## الأدوات والتقنيات
+LinkGuard breaks the inspection into small, explainable checks. Each check returns structured evidence, and a deterministic scoring service combines that evidence into a final report. This keeps the result predictable: the same findings always produce the same score.
 
-| الأداة | استخدامها في المشروع |
+## What it checks
+
+- Whether the URL is valid and uses HTTP or HTTPS
+- Local, private, reserved, and special-purpose network addresses
+- Direct IP hosts, Punycode, URL shorteners, unusual ports, and excessive subdomains
+- Long or misleading URL structures
+- Phishing-related wording and possible brand impersonation
+- Reputation data from a replaceable provider
+- Optional page metadata such as titles, forms, password fields, and meta redirects
+- The coverage and limitations of the analysis
+
+The application can also save a case locally and export the report as an Arabic or English PDF.
+
+## How the analysis works
+
+1. **URL validation** normalizes the address and rejects unsafe or malformed targets.
+2. **Structure analysis** looks for suspicious properties in the URL itself.
+3. **Reputation analysis** checks either the local demo dataset or VirusTotal.
+4. **Phishing analysis** looks for sensitive wording and brand-like hostnames.
+5. **Content analysis** optionally requests limited metadata from an isolated Node.js service.
+6. **Risk scoring** adds configured weights, removes duplicate findings, and caps the total at 100.
+7. **Explanation** turns the existing evidence into a readable summary without changing the score.
+
+The score represents observed indicators, not the probability that a website is malicious.
+
+## Technology used
+
+| Technology | Role in the project |
 |---|---|
-| PHP 8.2 | منطق التطبيق، التوجيه، الخدمات، والتحقق الأمني |
-| HTML / CSS / JavaScript | واجهة متجاوبة بدون إطار واجهات ثقيل |
-| SQLite + PDO | حفظ نتائج التحليل محلياً باستعلامات مجهزة |
-| Dompdf | إنشاء تقارير PDF |
-| Ar-PHP | تشكيل النص العربي داخل تقارير PDF |
-| Node.js | خدمة فحص بيانات الصفحة الوصفية |
-| Docker Compose | عزل خدمة فحص المحتوى وتقييد مواردها |
-| VirusTotal API | مزود اختياري لسمعة الروابط |
-| PHPUnit | اختبارات الوحدات والتكامل والأمان |
-| GitHub Actions | تشغيل اختبارات PHP وNode تلقائياً |
-| Render Blueprint | إعداد جاهز لنشر ديمو Docker |
+| PHP 8.2 | Application logic, routing, validation, services, and views |
+| HTML, CSS, and vanilla JavaScript | Responsive bilingual interface |
+| SQLite and PDO | Local case storage with prepared statements |
+| Dompdf | PDF report generation |
+| Ar-PHP | Arabic text shaping in PDF reports |
+| Node.js | Metadata-only page inspection service |
+| Docker Compose | Isolation and resource limits for content inspection |
+| VirusTotal API | Optional live URL reputation provider |
+| PHPUnit | Unit, feature, and security tests |
+| GitHub Actions | Automated PHP and Node.js test runs |
+| Render | Docker-based deployment of the public demo |
 
-## التشغيل السريع
+## Run it locally
 
-المتطلبات: PHP 8.2 أو أحدث، Composer 2، وإضافات `curl` و`mbstring` و`pdo_sqlite` و`dom`.
-
-```powershell
-Copy-Item .env.example .env
-composer install
-php -S 127.0.0.1:8000 -t public public/router.php
-```
-
-افتح `http://127.0.0.1:8000`.
-
-لتشغيل فحص بيانات الصفحة المعزول:
-
-```powershell
-php scripts/setup-sandbox.php
-docker compose up -d --build
-```
-
-ثم غيّر `CONTENT_SANDBOX_MODE=http` في ملف `.env`. لا ترفع ملف `.env` إلى GitHub.
-
-## روابط آمنة للتجربة
-
-| الحالة | الرابط |
-|---|---|
-| مؤشرات قليلة | `https://example.com/` |
-| حالة سمعة تجريبية مشبوهة | `https://suspicious-demo.example.com/verify-account` |
-| نمط تقليد علامة | `https://paypal-secure.example.com/verify-account` |
-| حالة تجريبية عالية الخطورة | `https://known-risk.example.com/login` |
-| رابط غير صالح | `https://webook@@.com/w` |
-
-النطاقات ذات النتائج التجريبية أعلاه محجوزة للاختبار، ولا تمثل حكماً على مواقع حقيقية.
-
-## أوضاع السمعة
-
-- `mock`: بيانات محلية توضيحية، وهو الوضع الافتراضي للديمو.
-- `virustotal`: فحص سمعة حي بمفتاح API صالح.
-- غير متاح: يُعرض الفحص كغير مكتمل، ولا يُعامل غياب البيانات كإشارة أمان.
-
-## نموذج الدرجة
-
-الأوزان موجودة في [`config/risk.php`](config/risk.php)، ومن أمثلتها:
-
-| المؤشر | النقاط |
-|---|---:|
-| عنوان IP مباشر | 20 |
-| Punycode | 20 |
-| احتمال تقليد علامة | 25 |
-| سمعة خبيثة | 40 |
-| سمعة مشبوهة | 25 |
-| كلمات تصيد | 10 |
-| HTTP بدون تشفير | 5 |
-| نموذج يرسل إلى نطاق خارجي | 20 |
-
-المستويات: 0–24 منخفض مرصود، 25–49 متوسط، 50–74 مرتفع، و75–100 حرج.
-
-## الاختبارات
-
-```powershell
-composer test
-Set-Location sandbox
-npm.cmd test
-```
-
-ولتجربة مجموعة الأمان التنفيذية شغّل التطبيق أولاً، ثم:
-
-```powershell
-php security/run_security_tests.php --base-url=http://127.0.0.1:8000
-```
-
-تشمل الاختبارات: SSRF وXSS وCSRF وSQL injection والجلسات والحد من الطلبات وصحة احتساب الدرجة وإنشاء PDF وعدم تشغيل JavaScript غير الموثوق.
-
-## هيكل المشروع
-
-```text
-app/
-  Controllers/        استقبال الطلبات
-  Models/             تخزين SQLite
-  Services/
-    Agents/           وكلاء التحليل والدرجة والتفسير
-    Reputation/       مزودات السمعة
-    Sandbox/          الاتصال بخدمة المحتوى المعزولة
-  Support/            التحقق، الحماية، الترجمة، وتحديد المعدل
-  Views/              صفحات HTML وقالب PDF
-config/               إعداد التطبيق وأوزان الخطورة
-database/             مخطط قاعدة البيانات
-public/               نقطة الدخول وCSS وJavaScript
-sandbox/              خدمة Node.js المعزولة
-security/             مجموعة اختبارات الأمان
-tests/                اختبارات PHPUnit
-```
-
-## حدود مهمة
-
-- لا يفحص عمر النطاق أو مالكه أو سجل الشهادات حالياً.
-- الفحص المعزول ثابت ولا يشغّل JavaScript الخاص بالموقع.
-- قواعد العلامات والكلمات توضيحية وقد تنتج إيجابيات أو سلبيات خاطئة.
-- VirusTotal قد لا يملك تقريراً سابقاً لبعض الروابط؛ التطبيق لا يرسل الرابط للفحص تلقائياً.
-- SQLite مناسبة للديمو المحلي، وليست إعداداً نهائياً لخدمة متعددة المستخدمين.
-
-التفاصيل الأمنية وحدود الثقة موثقة في [`SECURITY.md`](SECURITY.md).
-
----
-
-## English summary
-
-LinkGuard AI is a bilingual PHP 8.2 application that validates suspicious URLs, blocks internal targets, analyzes URL and phishing patterns, optionally checks VirusTotal reputation, inspects bounded page metadata in an isolated Node.js container, calculates a deterministic observed-risk score, stores cases in SQLite, and exports Arabic or English PDF reports.
-
-Quick start:
+You need PHP 8.2 or newer, Composer 2, and the `curl`, `dom`, `mbstring`, and `pdo_sqlite` PHP extensions.
 
 ```bash
 cp .env.example .env
@@ -154,4 +67,159 @@ composer install
 php -S 127.0.0.1:8000 -t public public/router.php
 ```
 
-The score represents observed indicators—not the probability that a URL is malicious and never a guarantee of safety.
+Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+
+On Windows PowerShell, copy the environment file with:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The database is created automatically the first time the application starts.
+
+## Optional isolated page inspection
+
+The main PHP application does not fetch submitted websites directly. When page inspection is enabled, it sends a validated public URL to a separate Node.js container.
+
+```bash
+php scripts/setup-sandbox.php
+docker compose up -d --build
+```
+
+Then set this value in `.env`:
+
+```dotenv
+CONTENT_SANDBOX_MODE=http
+```
+
+The sandbox does not execute page JavaScript, follow redirects, or download files. It returns bounded metadata only.
+
+## Reputation modes
+
+### Demo mode
+
+```dotenv
+REPUTATION_MODE=mock
+```
+
+This uses a small local dataset. It is useful for demonstrations and automated tests, but it is not live internet reputation.
+
+### VirusTotal mode
+
+```dotenv
+REPUTATION_MODE=virustotal
+VIRUSTOTAL_API_KEY=your_key_here
+```
+
+Keep the API key in `.env` or in your hosting provider’s secret settings. Never commit it to GitHub.
+
+If reputation data is unavailable, LinkGuard marks that check as unavailable. Missing data is never treated as proof that a link is safe.
+
+## Safe demo cases
+
+These addresses are intended for testing:
+
+| Scenario | URL |
+|---|---|
+| Few observed indicators | `https://example.com/` |
+| Suspicious mock reputation | `https://suspicious-demo.example.com/verify-account` |
+| Brand imitation pattern | `https://paypal-secure.example.com/verify-account` |
+| High-risk mock case | `https://known-risk.example.com/login` |
+| Invalid URL | `https://webook@@.com/w` |
+
+The mock domains are test fixtures. Their results are not claims about real websites.
+
+## Scoring
+
+All weights are defined in [`config/risk.php`](config/risk.php). A few examples:
+
+| Indicator | Points |
+|---|---:|
+| Direct IP host | 20 |
+| Punycode hostname | 20 |
+| Possible brand impersonation | 25 |
+| Malicious reputation result | 40 |
+| Suspicious reputation result | 25 |
+| Phishing-related wording | 10 |
+| Plain HTTP | 5 |
+| Form posting to another domain | 20 |
+
+Risk levels:
+
+- 0–24: Low observed risk
+- 25–49: Moderate risk
+- 50–74: High risk
+- 75–100: Critical risk
+
+## Tests
+
+Run the PHP test suite:
+
+```bash
+composer test
+```
+
+Run the sandbox tests:
+
+```bash
+cd sandbox
+npm test
+```
+
+Run the executable security dataset while the local application is running:
+
+```bash
+php security/run_security_tests.php --base-url=http://127.0.0.1:8000
+```
+
+The test coverage includes URL normalization, SSRF protections, XSS escaping, CSRF, prepared SQL statements, rate limiting, deterministic scoring, PDF generation, metadata limits, and verification that untrusted page scripts are not executed.
+
+## Project structure
+
+```text
+app/
+  Controllers/        Request handling
+  Models/             SQLite persistence
+  Services/
+    Agents/           Analysis and scoring agents
+    Reputation/       Reputation provider adapters
+    Sandbox/          Isolated content-service adapter
+  Support/            Validation, security, translation, and rate limits
+  Views/              HTML pages and PDF template
+config/               Application and risk settings
+database/             SQLite schema
+public/               Front controller and frontend assets
+sandbox/              Isolated Node.js metadata service
+security/             Executable security dataset
+tests/                PHPUnit tests
+```
+
+## Security approach
+
+The project includes:
+
+- Strict HTTP/HTTPS parsing and embedded-credential rejection
+- Blocking for localhost, private, reserved, link-local, and special IP ranges
+- DNS-result validation before analysis
+- A separate read-only content container with restricted permissions and resources
+- Redirect, script execution, download, response-size, and timeout controls
+- Output escaping for HTML and PDF
+- CSRF protection and file-backed rate limiting
+- Prepared SQLite statements
+- Secure browser headers and session-cookie settings
+- Ignored environment secrets and generic production error messages
+
+More detail is available in [`SECURITY.md`](SECURITY.md).
+
+## Current limitations
+
+LinkGuard is a working prototype, not a replacement for a professional threat-intelligence platform.
+
+- The public demo uses mock reputation data.
+- Domain age, registration ownership, and certificate history are not checked.
+- The isolated inspector does not observe JavaScript-rendered behavior.
+- The brand and keyword rules are intentionally small and can produce false positives or false negatives.
+- VirusTotal might not have an existing report for every URL.
+- SQLite is suitable for this demo, but a multi-user production service would need authentication, case ownership, and a more durable database.
+
+The important design rule is simple: unavailable evidence must remain visible as unavailable. It must never silently become a “safe” result.
